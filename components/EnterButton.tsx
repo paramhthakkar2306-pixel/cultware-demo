@@ -2,11 +2,13 @@
 
 import { motion } from "framer-motion";
 import { useState } from "react";
+import { useIsTouch } from "@/lib/useIsTouch";
 
 const CINEMA = [0.16, 1, 0.3, 1] as const;
 
 export default function EnterButton() {
   const [hover, setHover] = useState(false);
+  const isTouch = useIsTouch();
 
   return (
     <motion.div
@@ -17,15 +19,17 @@ export default function EnterButton() {
     >
       <motion.button
         type="button"
-        onHoverStart={() => setHover(true)}
-        onHoverEnd={() => setHover(false)}
+        onHoverStart={isTouch ? undefined : () => setHover(true)}
+        onHoverEnd={isTouch ? undefined : () => setHover(false)}
+        onTouchStart={() => setHover(true)}
+        onTouchEnd={() => setHover(false)}
         whileTap={{ scale: 0.97 }}
         onClick={() =>
           document
             .getElementById("collection")
             ?.scrollIntoView({ behavior: "smooth" })
         }
-        className="group relative overflow-hidden rounded-full border border-gold/40 px-10 py-4 font-sans text-xs font-medium uppercase tracking-cult text-bone outline-none transition-colors duration-700 ease-cinema hover:border-gold"
+        className="group relative overflow-hidden rounded-full border border-gold/40 px-10 py-4 font-sans text-xs font-medium uppercase tracking-cult text-bone outline-none transition-colors duration-700 ease-cinema hover:border-gold active:border-gold"
       >
         {/* gold fill sweeps up from below on hover */}
         <motion.span

@@ -204,7 +204,7 @@ export default function SizeVisualizer({
             role="dialog"
             aria-modal="true"
             aria-label={`Size visualizer — ${product.name}`}
-            className="relative z-10 flex max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-sm border border-gold/20 shadow-2xl md:flex-row"
+            className="relative z-10 flex max-h-[90vh] w-full max-w-5xl flex-col overflow-y-auto rounded-sm border border-gold/20 shadow-2xl md:flex-row md:overflow-hidden"
             style={{
               background:
                 "radial-gradient(120% 100% at 0% 0%, #14121b 0%, #0a0910 50%, #060509 100%)",
@@ -224,7 +224,7 @@ export default function SizeVisualizer({
             </button>
 
             {/* ---------- LEFT: product showcase ---------- */}
-            <div className="relative z-10 flex w-full flex-col justify-between border-b border-gold/10 p-7 md:w-[38%] md:border-b-0 md:border-r md:p-8">
+            <div className="relative z-10 flex w-full flex-col justify-between border-b border-gold/10 p-5 md:w-[38%] md:border-b-0 md:border-r md:p-8">
               <div>
                 <span className="inline-block border border-gold/40 px-2 py-[3px] font-sans text-[0.55rem] font-medium uppercase tracking-[0.3em] text-gold">
                   {product.category}
@@ -232,9 +232,9 @@ export default function SizeVisualizer({
               </div>
 
               {/* product image */}
-              <div className="relative my-6 flex flex-1 items-center justify-center">
+              <div className="relative my-3 flex items-center justify-center md:my-6 md:flex-1">
                 <div
-                  className="relative aspect-[3/4] w-full max-w-[200px] overflow-hidden rounded-sm"
+                  className="relative aspect-[3/4] w-full max-w-[130px] overflow-hidden rounded-sm md:max-w-[200px]"
                   style={{
                     background:
                       "radial-gradient(130% 120% at 50% 10%, #1e1b2a 0%, #0e0c18 55%, #07050f 100%)",
@@ -270,11 +270,11 @@ export default function SizeVisualizer({
             </div>
 
             {/* ---------- RIGHT: inputs + result ---------- */}
-            <div className="relative z-10 w-full overflow-y-auto p-7 md:w-[62%] md:p-9">
+            <div className="relative z-10 w-full overflow-y-auto p-5 md:w-[62%] md:p-9">
               <span className="mb-1 block font-sans text-[0.58rem] uppercase tracking-[0.4em] text-gold/70">
                 Size Visualizer
               </span>
-              <h3 className="mb-7 font-display text-2xl font-bold uppercase tracking-[0.05em] text-bone">
+              <h3 className="mb-5 font-display text-xl font-bold uppercase tracking-[0.05em] text-bone md:mb-7 md:text-2xl">
                 Find Your Fit
               </h3>
 
@@ -458,7 +458,7 @@ export default function SizeVisualizer({
                       <span className="mb-3 block font-sans text-[0.58rem] uppercase tracking-[0.35em] text-bone/40">
                         Size Chart — Reference (cm)
                       </span>
-                      <div className="overflow-hidden rounded-sm border border-bone/10">
+                      <div className="overflow-x-auto rounded-sm border border-bone/10">
                         <table className="w-full border-collapse text-left font-sans text-xs">
                           <thead>
                             <tr className="bg-bone/[0.03] text-[0.55rem] uppercase tracking-[0.2em] text-bone/40">

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import type { Product } from "@/data/products";
+import { useIsTouch } from "@/lib/useIsTouch";
 
 const CINEMA = [0.16, 1, 0.3, 1] as const;
 
@@ -28,6 +29,7 @@ type ProductCardProps = {
 
 export default function ProductCard({ product, index, onViewFit }: ProductCardProps) {
   const [hovered, setHovered] = useState(false);
+  const isTouch = useIsTouch();
   const gradient = CARD_GRADIENTS[index % CARD_GRADIENTS.length];
 
   return (
@@ -43,12 +45,18 @@ export default function ProductCard({ product, index, onViewFit }: ProductCardPr
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-60px" }}
       transition={{ duration: 1.1, delay: index * 0.09, ease: CINEMA }}
-      whileHover={{
-        y: -10,
-        filter: "drop-shadow(0 24px 48px rgba(200,163,90,0.22)) drop-shadow(0 8px 16px rgba(200,163,90,0.12))",
-      }}
-      onHoverStart={() => setHovered(true)}
-      onHoverEnd={() => setHovered(false)}
+      whileHover={
+        isTouch
+          ? {}
+          : {
+              y: -10,
+              filter:
+                "drop-shadow(0 24px 48px rgba(200,163,90,0.22)) drop-shadow(0 8px 16px rgba(200,163,90,0.12))",
+            }
+      }
+      whileTap={{ scale: 0.98 }}
+      onHoverStart={() => { if (!isTouch) setHovered(true); }}
+      onHoverEnd={() => { if (!isTouch) setHovered(false); }}
     >
       {/* real product image — multiply blend absorbs the white background */}
       <div className="absolute inset-0 z-0 flex items-center justify-center p-6 pb-20">
@@ -123,11 +131,21 @@ export default function ProductCard({ product, index, onViewFit }: ProductCardPr
         <p className="mt-1 font-sans text-sm font-light text-bone/55">
           ₹{product.price.toLocaleString("en-IN")}
         </p>
+        {isTouch && onViewFit && (
+          <button
+            type="button"
+            onClick={() => onViewFit(product)}
+            className="mt-3 block w-full border border-gold/50 py-3 font-sans text-[0.62rem] uppercase tracking-[0.3em] text-bone transition-colors duration-300 active:border-gold active:bg-gold active:text-ink"
+            style={{ borderRadius: "1px" }}
+          >
+            View Fit
+          </button>
+        )}
       </div>
 
-      {/* hover overlay — cinematic slow reveal */}
+      {/* hover overlay — cinematic slow reveal (desktop only; pointer-events disabled on touch) */}
       <motion.div
-        className="absolute inset-0 z-[35] flex flex-col items-center justify-center gap-5"
+        className={`absolute inset-0 z-[35] flex flex-col items-center justify-center gap-5${isTouch ? " pointer-events-none" : ""}`}
         style={{
           background: "rgba(5,4,12,0.72)",
           backdropFilter: "blur(3px)",

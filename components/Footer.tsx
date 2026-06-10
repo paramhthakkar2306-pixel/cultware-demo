@@ -66,11 +66,12 @@ export default function Footer() {
           href={SOZO_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="group relative mt-10 inline-flex overflow-hidden rounded-full border border-gold/45 px-12 py-4 outline-none transition-colors duration-500 hover:border-gold"
+          className="group relative mt-10 inline-flex overflow-hidden rounded-full border border-gold/45 px-12 py-4 outline-none transition-colors duration-500 hover:border-gold active:border-gold"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 1.2, delay: 0.3, ease: CINEMA }}
+          whileTap={{ scale: 0.97 }}
         >
           <span className="absolute inset-0 -translate-y-full bg-gold transition-transform duration-[600ms] ease-cinema group-hover:translate-y-0" />
           <span className="relative z-10 inline-flex items-center gap-3 font-sans text-[0.7rem] uppercase tracking-[0.35em] text-bone transition-colors duration-500 group-hover:text-ink">
