@@ -32,6 +32,10 @@ export default function ProductCard({ product, index, onViewFit }: ProductCardPr
   const isTouch = useIsTouch();
   const gradient = CARD_GRADIENTS[index % CARD_GRADIENTS.length];
 
+  // On touch devices the overlay is permanently open — no hover gate.
+  // On desktop it opens on hover only (unchanged).
+  const open = isTouch || hovered;
+
   return (
     <motion.article
       className="relative cursor-pointer overflow-hidden"
@@ -58,7 +62,7 @@ export default function ProductCard({ product, index, onViewFit }: ProductCardPr
       onHoverStart={() => { if (!isTouch) setHovered(true); }}
       onHoverEnd={() => { if (!isTouch) setHovered(false); }}
     >
-      {/* real product image — multiply blend absorbs the white background */}
+      {/* product image */}
       <div className="absolute inset-0 z-0 flex items-center justify-center p-6 pb-20">
         <div className="relative h-full w-full">
           <Image
@@ -72,22 +76,20 @@ export default function ProductCard({ product, index, onViewFit }: ProductCardPr
         </div>
       </div>
 
-      {/* subtle gold ambient glow behind the garment — intensifies on hover */}
+      {/* gold ambient glow — intensifies when open */}
       <motion.div
         className="pointer-events-none absolute inset-0 z-[1]"
         style={{
           background:
             "radial-gradient(ellipse 70% 65% at 50% 42%, rgba(200,163,90,VAR) 0%, transparent 100%)",
         }}
-        animate={{
-          opacity: hovered ? 1 : 0.35,
-        }}
+        animate={{ opacity: open ? 1 : 0.35 }}
         transition={{ duration: 0.8, ease: CINEMA }}
       >
         <div
           className="h-full w-full"
           style={{
-            background: hovered
+            background: open
               ? "radial-gradient(ellipse 75% 70% at 50% 42%, rgba(200,163,90,0.13) 0%, transparent 100%)"
               : "radial-gradient(ellipse 60% 55% at 50% 42%, rgba(200,163,90,0.05) 0%, transparent 100%)",
             transition: "background 0.8s cubic-bezier(0.16,1,0.3,1)",
@@ -95,7 +97,7 @@ export default function ProductCard({ product, index, onViewFit }: ProductCardPr
         />
       </motion.div>
 
-      {/* bottom fade — lets product info read cleanly over the image */}
+      {/* bottom fade */}
       <div
         className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-2/5"
         style={{
@@ -108,7 +110,7 @@ export default function ProductCard({ product, index, onViewFit }: ProductCardPr
       <motion.div
         className="pointer-events-none absolute inset-0 z-40"
         animate={{
-          boxShadow: hovered
+          boxShadow: open
             ? "inset 0 0 0 1px rgba(200,163,90,0.45)"
             : "inset 0 0 0 1px rgba(200,163,90,0.10)",
         }}
@@ -116,7 +118,7 @@ export default function ProductCard({ product, index, onViewFit }: ProductCardPr
         style={{ borderRadius: "inherit" }}
       />
 
-      {/* info bar — always visible */}
+      {/* info bar — always visible on desktop (sits behind overlay on mobile) */}
       <div className="absolute inset-x-0 bottom-0 z-30 px-5 pb-5 pt-8">
         <span
           className={`mb-2 inline-block border px-2 py-[3px] font-sans text-[0.52rem] font-medium uppercase tracking-[0.3em] ${
@@ -131,59 +133,53 @@ export default function ProductCard({ product, index, onViewFit }: ProductCardPr
         <p className="mt-1 font-sans text-sm font-light text-bone/55">
           ₹{product.price.toLocaleString("en-IN")}
         </p>
-        {isTouch && onViewFit && (
-          <button
-            type="button"
-            onClick={() => onViewFit(product)}
-            className="mt-3 block w-full border border-gold/50 py-3 font-sans text-[0.62rem] uppercase tracking-[0.3em] text-bone transition-colors duration-300 active:border-gold active:bg-gold active:text-ink"
-            style={{ borderRadius: "1px" }}
-          >
-            View Fit
-          </button>
-        )}
       </div>
 
-      {/* hover overlay — cinematic slow reveal (desktop only; pointer-events disabled on touch) */}
+      {/* overlay
+          Desktop: fades in on hover, content slides up.
+          Mobile:  permanently visible (open=true); tap anywhere fires onViewFit.
+          The View Fit button stops propagation so the overlay onClick doesn't double-fire. */}
       <motion.div
-        className={`absolute inset-0 z-[35] flex flex-col items-center justify-center gap-5${isTouch ? " pointer-events-none" : ""}`}
+        className="absolute inset-0 z-[35] flex flex-col items-center justify-center gap-5"
         style={{
           background: "rgba(5,4,12,0.72)",
           backdropFilter: "blur(3px)",
         }}
         initial={{ opacity: 0 }}
-        animate={{ opacity: hovered ? 1 : 0 }}
+        animate={{ opacity: open ? 1 : 0 }}
         transition={{ duration: 0.75, ease: CINEMA }}
+        onClick={isTouch ? () => onViewFit?.(product) : undefined}
       >
         <motion.span
           className="font-sans text-[0.58rem] uppercase tracking-[0.38em] text-bone/50"
-          animate={{ y: hovered ? 0 : 10 }}
-          transition={{ duration: 0.75, delay: 0.04, ease: CINEMA }}
+          animate={{ y: open ? 0 : 10 }}
+          transition={{ duration: 0.75, delay: isTouch ? 0 : 0.04, ease: CINEMA }}
         >
           {product.category}
         </motion.span>
 
         <motion.h3
           className="px-5 text-center font-display text-base font-semibold uppercase leading-snug tracking-widest text-bone sm:text-lg"
-          animate={{ y: hovered ? 0 : 14 }}
-          transition={{ duration: 0.75, delay: 0.09, ease: CINEMA }}
+          animate={{ y: open ? 0 : 14 }}
+          transition={{ duration: 0.75, delay: isTouch ? 0 : 0.09, ease: CINEMA }}
         >
           {product.name}
         </motion.h3>
 
         <motion.p
           className="font-sans text-sm font-light text-gold"
-          animate={{ y: hovered ? 0 : 14 }}
-          transition={{ duration: 0.75, delay: 0.13, ease: CINEMA }}
+          animate={{ y: open ? 0 : 14 }}
+          transition={{ duration: 0.75, delay: isTouch ? 0 : 0.13, ease: CINEMA }}
         >
           ₹{product.price.toLocaleString("en-IN")}
         </motion.p>
 
         <motion.button
           type="button"
-          onClick={() => onViewFit?.(product)}
-          className="mt-1 border border-gold/50 px-8 py-3 font-sans text-[0.65rem] uppercase tracking-[0.3em] text-bone transition-colors duration-500 hover:border-gold hover:bg-gold hover:text-ink"
-          animate={{ y: hovered ? 0 : 18, opacity: hovered ? 1 : 0 }}
-          transition={{ duration: 0.75, delay: 0.17, ease: CINEMA }}
+          onClick={(e) => { e.stopPropagation(); onViewFit?.(product); }}
+          className="mt-1 border border-gold/50 px-8 py-3 font-sans text-[0.65rem] uppercase tracking-[0.3em] text-bone transition-colors duration-500 hover:border-gold hover:bg-gold hover:text-ink active:border-gold active:bg-gold active:text-ink"
+          animate={{ y: open ? 0 : 18, opacity: open ? 1 : 0 }}
+          transition={{ duration: 0.75, delay: isTouch ? 0 : 0.17, ease: CINEMA }}
           style={{ borderRadius: "1px" }}
         >
           View Fit
