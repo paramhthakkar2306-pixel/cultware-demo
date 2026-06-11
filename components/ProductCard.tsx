@@ -32,42 +32,54 @@ export default function ProductCard({ product, index, onViewFit }: ProductCardPr
   const isTouch = useIsTouch();
   const gradient = CARD_GRADIENTS[index % CARD_GRADIENTS.length];
 
-  // On touch devices the overlay is always open — no hover gate.
-  const open = isTouch || hovered;
-
   return (
     <motion.article
-      className="relative cursor-pointer overflow-hidden"
+      // Desktop: fixed 3:4 aspect ratio, overflow-hidden, no flex.
+      // Mobile:  aspect-ratio auto, flex column so image + info stack vertically.
+      className="relative cursor-pointer overflow-hidden [aspect-ratio:3/4]
+        [@media(hover:none)_and_(pointer:coarse)]:[aspect-ratio:auto]
+        [@media(hover:none)_and_(pointer:coarse)]:flex
+        [@media(hover:none)_and_(pointer:coarse)]:flex-col"
       style={{
         background: gradient,
         borderRadius: "2px",
         border: "1px solid rgba(200,163,90,0.10)",
-        aspectRatio: "3 / 4",
-        // Eliminates iOS 300 ms tap delay; panning/zoom still work.
         touchAction: "manipulation",
       }}
       initial={{ opacity: 0, y: 48 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-60px" }}
       transition={{ duration: 1.1, delay: index * 0.09, ease: CINEMA }}
-      // Desktop: cinematic lift on hover.  Mobile: skip entirely.
       whileHover={isTouch ? undefined : {
         y: -10,
         filter:
           "drop-shadow(0 24px 48px rgba(200,163,90,0.22)) drop-shadow(0 8px 16px rgba(200,163,90,0.12))",
       }}
-      // Physical press feedback on touch.
       whileTap={{ scale: 0.97 }}
-      // Desktop hover state for the overlay reveal.
       onHoverStart={() => { if (!isTouch) setHovered(true); }}
       onHoverEnd={() => { if (!isTouch) setHovered(false); }}
-      // ── Mobile tap handler lives HERE on the container, not inside any child. ──
-      // Every decorative child layer is pointer-events-none on mobile, so nothing
-      // can swallow the event before it reaches this onClick.
+      // Mobile: tap anywhere on card opens the visualizer.
       onClick={isTouch ? () => onViewFit?.(product) : undefined}
     >
-      {/* product image */}
-      <div className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center p-6 pb-20">
+
+      {/* ── IMAGE ZONE ────────────────────────────────────────────────────────
+          Desktop: absolute, fills the entire 3:4 card.
+          Mobile:  relative with its own 3:4 aspect ratio; no overlays on top.
+          Ambient glow + bottom fade live inside here so on mobile they're
+          contained within the image section and don't bleed onto the info panel.
+      ─────────────────────────────────────────────────────────────────────── */}
+      <div
+        className="pointer-events-none absolute inset-0 z-0
+          flex items-center justify-center p-6 pb-20
+          [@media(hover:none)_and_(pointer:coarse)]:relative
+          [@media(hover:none)_and_(pointer:coarse)]:inset-auto
+          [@media(hover:none)_and_(pointer:coarse)]:[aspect-ratio:3/4]
+          [@media(hover:none)_and_(pointer:coarse)]:w-full
+          [@media(hover:none)_and_(pointer:coarse)]:flex-shrink-0
+          [@media(hover:none)_and_(pointer:coarse)]:overflow-hidden
+          [@media(hover:none)_and_(pointer:coarse)]:p-4"
+      >
+        {/* product image */}
         <div className="relative h-full w-full">
           <Image
             src={product.image}
@@ -78,43 +90,40 @@ export default function ProductCard({ product, index, onViewFit }: ProductCardPr
             priority={index < 2}
           />
         </div>
-      </div>
 
-      {/* gold ambient glow */}
-      <motion.div
-        className="pointer-events-none absolute inset-0 z-[1]"
-        style={{
-          background:
-            "radial-gradient(ellipse 70% 65% at 50% 42%, rgba(200,163,90,VAR) 0%, transparent 100%)",
-        }}
-        animate={{ opacity: open ? 1 : 0.35 }}
-        transition={{ duration: 0.8, ease: CINEMA }}
-      >
+        {/* gold ambient glow — contained within image zone on both layouts */}
+        <motion.div
+          className="pointer-events-none absolute inset-0"
+          animate={{ opacity: hovered ? 1 : 0.35 }}
+          transition={{ duration: 0.8, ease: CINEMA }}
+        >
+          <div
+            className="h-full w-full"
+            style={{
+              background: hovered
+                ? "radial-gradient(ellipse 75% 70% at 50% 42%, rgba(200,163,90,0.13) 0%, transparent 100%)"
+                : "radial-gradient(ellipse 60% 55% at 50% 42%, rgba(200,163,90,0.05) 0%, transparent 100%)",
+              transition: "background 0.8s cubic-bezier(0.16,1,0.3,1)",
+            }}
+          />
+        </motion.div>
+
+        {/* bottom fade gradient — hidden on mobile since info panel is below */}
         <div
-          className="h-full w-full"
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5
+            [@media(hover:none)_and_(pointer:coarse)]:hidden"
           style={{
-            background: open
-              ? "radial-gradient(ellipse 75% 70% at 50% 42%, rgba(200,163,90,0.13) 0%, transparent 100%)"
-              : "radial-gradient(ellipse 60% 55% at 50% 42%, rgba(200,163,90,0.05) 0%, transparent 100%)",
-            transition: "background 0.8s cubic-bezier(0.16,1,0.3,1)",
+            background:
+              "linear-gradient(to top, rgba(7,5,16,0.98) 0%, rgba(7,5,16,0.82) 40%, rgba(7,5,16,0.3) 75%, transparent 100%)",
           }}
         />
-      </motion.div>
+      </div>
 
-      {/* bottom fade */}
-      <div
-        className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-2/5"
-        style={{
-          background:
-            "linear-gradient(to top, rgba(7,5,16,0.98) 0%, rgba(7,5,16,0.82) 40%, rgba(7,5,16,0.3) 75%, transparent 100%)",
-        }}
-      />
-
-      {/* inset border glow */}
+      {/* ── INSET BORDER GLOW — at card level, covers full card on both layouts */}
       <motion.div
         className="pointer-events-none absolute inset-0 z-40"
         animate={{
-          boxShadow: open
+          boxShadow: hovered
             ? "inset 0 0 0 1px rgba(200,163,90,0.45)"
             : "inset 0 0 0 1px rgba(200,163,90,0.10)",
         }}
@@ -122,8 +131,23 @@ export default function ProductCard({ product, index, onViewFit }: ProductCardPr
         style={{ borderRadius: "inherit" }}
       />
 
-      {/* static info bar — always visible on desktop (hidden behind overlay on mobile) */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 px-5 pb-5 pt-8">
+      {/* ── STATIC INFO BAR ───────────────────────────────────────────────────
+          Desktop: absolute, sits over the bottom of the card image.
+                   Hover overlay (z-35) slides in on top, hiding it.
+          Mobile:  in-flow block below the image zone.
+                   Shows category + name + price + a tappable VIEW FIT button.
+      ─────────────────────────────────────────────────────────────────────── */}
+      <div
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-30 px-5 pb-5 pt-8
+          [@media(hover:none)_and_(pointer:coarse)]:pointer-events-auto
+          [@media(hover:none)_and_(pointer:coarse)]:relative
+          [@media(hover:none)_and_(pointer:coarse)]:inset-auto
+          [@media(hover:none)_and_(pointer:coarse)]:z-auto
+          [@media(hover:none)_and_(pointer:coarse)]:border-t
+          [@media(hover:none)_and_(pointer:coarse)]:border-gold/10
+          [@media(hover:none)_and_(pointer:coarse)]:px-4
+          [@media(hover:none)_and_(pointer:coarse)]:py-4"
+      >
         <span
           className={`mb-2 inline-block border px-2 py-[3px] font-sans text-[0.52rem] font-medium uppercase tracking-[0.3em] ${
             CATEGORY_COLORS[product.category] ?? "text-bone/70 border-bone/25"
@@ -137,64 +161,64 @@ export default function ProductCard({ product, index, onViewFit }: ProductCardPr
         <p className="mt-1 font-sans text-sm font-light text-bone/55">
           ₹{product.price.toLocaleString("en-IN")}
         </p>
+
+        {/* VIEW FIT button — mobile only; hidden on desktop (overlay has it) */}
+        <button
+          type="button"
+          className="mt-4 hidden w-full border border-gold/50 py-3 font-sans text-[0.62rem] uppercase tracking-[0.3em] text-bone transition-colors duration-300 active:border-gold active:bg-gold active:text-ink
+            [@media(hover:none)_and_(pointer:coarse)]:block"
+          onClick={(e) => { e.stopPropagation(); onViewFit?.(product); }}
+          style={{ borderRadius: "1px" }}
+        >
+          View Fit
+        </button>
       </div>
 
-      {/* reveal overlay
-          ─ Always pointer-events-none so it NEVER swallows taps or clicks.
-          ─ Desktop: fades + slides in on hover; View Fit button re-enables pointer
-            events so it can be clicked directly.
-          ─ Mobile: permanently visible (open=true); article onClick handles the tap. */}
+      {/* ── HOVER OVERLAY — desktop only; completely removed on mobile ────── */}
       <motion.div
-        className="pointer-events-none absolute inset-0 z-[35] flex flex-col items-center justify-center gap-5"
-        style={{
-          background: "rgba(5,4,12,0.72)",
-          backdropFilter: "blur(3px)",
-        }}
+        className="pointer-events-none absolute inset-0 z-[35] flex flex-col items-center justify-center gap-5
+          [@media(hover:none)_and_(pointer:coarse)]:hidden"
+        style={{ background: "rgba(5,4,12,0.72)", backdropFilter: "blur(3px)" }}
         initial={{ opacity: 0 }}
-        animate={{ opacity: open ? 1 : 0 }}
+        animate={{ opacity: hovered ? 1 : 0 }}
         transition={{ duration: 0.75, ease: CINEMA }}
       >
         <motion.span
           className="font-sans text-[0.58rem] uppercase tracking-[0.38em] text-bone/50"
-          animate={{ y: open ? 0 : 10 }}
-          transition={{ duration: 0.75, delay: isTouch ? 0 : 0.04, ease: CINEMA }}
+          animate={{ y: hovered ? 0 : 10 }}
+          transition={{ duration: 0.75, delay: 0.04, ease: CINEMA }}
         >
           {product.category}
         </motion.span>
 
         <motion.h3
           className="px-5 text-center font-display text-base font-semibold uppercase leading-snug tracking-widest text-bone sm:text-lg"
-          animate={{ y: open ? 0 : 14 }}
-          transition={{ duration: 0.75, delay: isTouch ? 0 : 0.09, ease: CINEMA }}
+          animate={{ y: hovered ? 0 : 14 }}
+          transition={{ duration: 0.75, delay: 0.09, ease: CINEMA }}
         >
           {product.name}
         </motion.h3>
 
         <motion.p
           className="font-sans text-sm font-light text-gold"
-          animate={{ y: open ? 0 : 14 }}
-          transition={{ duration: 0.75, delay: isTouch ? 0 : 0.13, ease: CINEMA }}
+          animate={{ y: hovered ? 0 : 14 }}
+          transition={{ duration: 0.75, delay: 0.13, ease: CINEMA }}
         >
           ₹{product.price.toLocaleString("en-IN")}
         </motion.p>
 
-        {/* On mobile: pointer-events-none — the article onClick handles the tap.
-            On desktop: pointer-events-auto — user clicks this button directly. */}
         <motion.button
           type="button"
-          className={`mt-1 border border-gold/50 px-8 py-3 font-sans text-[0.65rem] uppercase tracking-[0.3em] text-bone transition-colors duration-500 ${
-            isTouch
-              ? "pointer-events-none"
-              : "pointer-events-auto hover:border-gold hover:bg-gold hover:text-ink active:border-gold active:bg-gold active:text-ink"
-          }`}
-          onClick={isTouch ? undefined : () => onViewFit?.(product)}
-          animate={{ y: open ? 0 : 18, opacity: open ? 1 : 0 }}
-          transition={{ duration: 0.75, delay: isTouch ? 0 : 0.17, ease: CINEMA }}
+          className="pointer-events-auto mt-1 border border-gold/50 px-8 py-3 font-sans text-[0.65rem] uppercase tracking-[0.3em] text-bone transition-colors duration-500 hover:border-gold hover:bg-gold hover:text-ink active:border-gold active:bg-gold active:text-ink"
+          onClick={() => onViewFit?.(product)}
+          animate={{ y: hovered ? 0 : 18, opacity: hovered ? 1 : 0 }}
+          transition={{ duration: 0.75, delay: 0.17, ease: CINEMA }}
           style={{ borderRadius: "1px" }}
         >
           View Fit
         </motion.button>
       </motion.div>
+
     </motion.article>
   );
 }
