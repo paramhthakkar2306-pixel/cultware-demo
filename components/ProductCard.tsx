@@ -32,8 +32,7 @@ export default function ProductCard({ product, index, onViewFit }: ProductCardPr
   const isTouch = useIsTouch();
   const gradient = CARD_GRADIENTS[index % CARD_GRADIENTS.length];
 
-  // On touch devices the overlay is permanently open — no hover gate.
-  // On desktop it opens on hover only (unchanged).
+  // On touch devices the overlay is always open — no hover gate.
   const open = isTouch || hovered;
 
   return (
@@ -44,26 +43,31 @@ export default function ProductCard({ product, index, onViewFit }: ProductCardPr
         borderRadius: "2px",
         border: "1px solid rgba(200,163,90,0.10)",
         aspectRatio: "3 / 4",
+        // Eliminates iOS 300 ms tap delay; panning/zoom still work.
+        touchAction: "manipulation",
       }}
       initial={{ opacity: 0, y: 48 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-60px" }}
       transition={{ duration: 1.1, delay: index * 0.09, ease: CINEMA }}
-      whileHover={
-        isTouch
-          ? {}
-          : {
-              y: -10,
-              filter:
-                "drop-shadow(0 24px 48px rgba(200,163,90,0.22)) drop-shadow(0 8px 16px rgba(200,163,90,0.12))",
-            }
-      }
-      whileTap={{ scale: 0.98 }}
+      // Desktop: cinematic lift on hover.  Mobile: skip entirely.
+      whileHover={isTouch ? undefined : {
+        y: -10,
+        filter:
+          "drop-shadow(0 24px 48px rgba(200,163,90,0.22)) drop-shadow(0 8px 16px rgba(200,163,90,0.12))",
+      }}
+      // Physical press feedback on touch.
+      whileTap={{ scale: 0.97 }}
+      // Desktop hover state for the overlay reveal.
       onHoverStart={() => { if (!isTouch) setHovered(true); }}
       onHoverEnd={() => { if (!isTouch) setHovered(false); }}
+      // ── Mobile tap handler lives HERE on the container, not inside any child. ──
+      // Every decorative child layer is pointer-events-none on mobile, so nothing
+      // can swallow the event before it reaches this onClick.
+      onClick={isTouch ? () => onViewFit?.(product) : undefined}
     >
       {/* product image */}
-      <div className="absolute inset-0 z-0 flex items-center justify-center p-6 pb-20">
+      <div className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center p-6 pb-20">
         <div className="relative h-full w-full">
           <Image
             src={product.image}
@@ -76,7 +80,7 @@ export default function ProductCard({ product, index, onViewFit }: ProductCardPr
         </div>
       </div>
 
-      {/* gold ambient glow — intensifies when open */}
+      {/* gold ambient glow */}
       <motion.div
         className="pointer-events-none absolute inset-0 z-[1]"
         style={{
@@ -118,8 +122,8 @@ export default function ProductCard({ product, index, onViewFit }: ProductCardPr
         style={{ borderRadius: "inherit" }}
       />
 
-      {/* info bar — always visible on desktop (sits behind overlay on mobile) */}
-      <div className="absolute inset-x-0 bottom-0 z-30 px-5 pb-5 pt-8">
+      {/* static info bar — always visible on desktop (hidden behind overlay on mobile) */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 px-5 pb-5 pt-8">
         <span
           className={`mb-2 inline-block border px-2 py-[3px] font-sans text-[0.52rem] font-medium uppercase tracking-[0.3em] ${
             CATEGORY_COLORS[product.category] ?? "text-bone/70 border-bone/25"
@@ -135,12 +139,13 @@ export default function ProductCard({ product, index, onViewFit }: ProductCardPr
         </p>
       </div>
 
-      {/* overlay
-          Desktop: fades in on hover, content slides up.
-          Mobile:  permanently visible (open=true); tap anywhere fires onViewFit.
-          The View Fit button stops propagation so the overlay onClick doesn't double-fire. */}
+      {/* reveal overlay
+          ─ Always pointer-events-none so it NEVER swallows taps or clicks.
+          ─ Desktop: fades + slides in on hover; View Fit button re-enables pointer
+            events so it can be clicked directly.
+          ─ Mobile: permanently visible (open=true); article onClick handles the tap. */}
       <motion.div
-        className="absolute inset-0 z-[35] flex flex-col items-center justify-center gap-5"
+        className="pointer-events-none absolute inset-0 z-[35] flex flex-col items-center justify-center gap-5"
         style={{
           background: "rgba(5,4,12,0.72)",
           backdropFilter: "blur(3px)",
@@ -148,7 +153,6 @@ export default function ProductCard({ product, index, onViewFit }: ProductCardPr
         initial={{ opacity: 0 }}
         animate={{ opacity: open ? 1 : 0 }}
         transition={{ duration: 0.75, ease: CINEMA }}
-        onClick={isTouch ? () => onViewFit?.(product) : undefined}
       >
         <motion.span
           className="font-sans text-[0.58rem] uppercase tracking-[0.38em] text-bone/50"
@@ -174,10 +178,16 @@ export default function ProductCard({ product, index, onViewFit }: ProductCardPr
           ₹{product.price.toLocaleString("en-IN")}
         </motion.p>
 
+        {/* On mobile: pointer-events-none — the article onClick handles the tap.
+            On desktop: pointer-events-auto — user clicks this button directly. */}
         <motion.button
           type="button"
-          onClick={(e) => { e.stopPropagation(); onViewFit?.(product); }}
-          className="mt-1 border border-gold/50 px-8 py-3 font-sans text-[0.65rem] uppercase tracking-[0.3em] text-bone transition-colors duration-500 hover:border-gold hover:bg-gold hover:text-ink active:border-gold active:bg-gold active:text-ink"
+          className={`mt-1 border border-gold/50 px-8 py-3 font-sans text-[0.65rem] uppercase tracking-[0.3em] text-bone transition-colors duration-500 ${
+            isTouch
+              ? "pointer-events-none"
+              : "pointer-events-auto hover:border-gold hover:bg-gold hover:text-ink active:border-gold active:bg-gold active:text-ink"
+          }`}
+          onClick={isTouch ? undefined : () => onViewFit?.(product)}
           animate={{ y: open ? 0 : 18, opacity: open ? 1 : 0 }}
           transition={{ duration: 0.75, delay: isTouch ? 0 : 0.17, ease: CINEMA }}
           style={{ borderRadius: "1px" }}
